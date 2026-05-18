@@ -28,6 +28,7 @@ import {
 import type { ClusterConfig } from '../types';
 import { listClusters, addCluster, removeCluster } from '../api/client';
 import { useAppSettings } from '../context/AppSettings';
+import AppLogo from './AppLogo';
 
 const { Header, Sider, Content } = AntLayout;
 const { Title } = Typography;
@@ -132,9 +133,14 @@ const Layout: React.FC = () => {
             style={{
               padding: '16px',
               borderBottom: `1px solid ${siderTheme === 'dark' ? 'rgba(255,255,255,0.1)' : token.colorBorderSecondary}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              justifyContent: 'center',
             }}
           >
-            <Title level={4} style={{ color: titleColor, margin: 0, textAlign: 'center' }}>
+            <AppLogo size={36} />
+            <Title level={4} style={{ color: titleColor, margin: 0 }}>
               {t('layout.appTitle')}
             </Title>
           </div>
