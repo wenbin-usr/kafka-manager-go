@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd D:\\\\workspace\\\\java_projects\\\\claude_projects\\\\kafka-manager && go list -m -f '{{.Dir}}' github.com/segmentio/kafka-go)"
+    ]
+  }
+}

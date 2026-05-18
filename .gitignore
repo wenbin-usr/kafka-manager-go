@@ -1,0 +1,33 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+kafka-manager-go
+
+# Build output
+/web/dist/
+/dist/
+
+# Go workspace
+/vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+clusters.json
+
+# Node
+node_modules/
+web/node_modules/
+web/.vite/
