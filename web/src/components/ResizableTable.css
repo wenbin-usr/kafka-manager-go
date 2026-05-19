@@ -1,0 +1,35 @@
+.km-resizable-table .ant-table-thead > tr > th.km-resizable-th {
+  overflow: visible !important;
+}
+
+.km-resizable-table .km-resizable-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  z-index: 10;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+  background: transparent;
+}
+
+/* Subtle hint only when hovering the column header */
+.km-resizable-table .km-resizable-th:hover .km-resizable-handle {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.km-resizable-table .km-resizable-handle:hover,
+.km-resizable-table .km-resizable-handle:active {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Dark theme */
+[data-theme='dark'] .km-resizable-table .km-resizable-th:hover .km-resizable-handle {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .km-resizable-table .km-resizable-handle:hover,
+[data-theme='dark'] .km-resizable-table .km-resizable-handle:active {
+  background: rgba(255, 255, 255, 0.14);
+}
