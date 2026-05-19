@@ -1,15 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Descriptions, Table, Spin, Alert, Button, Tag, Space, Typography } from 'antd';
+import { Descriptions, Spin, Alert, Button, Tag } from 'antd';
 import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useCluster } from '../components/Layout';
+import { ResizableTable, type ResizableColumn } from '../components/ResizableTable';
 import { getConsumerGroupDetail } from '../api/client';
 import type { ConsumerGroupDetail as ConsumerGroupDetailType } from '../types';
-
-const { Text } = Typography;
-
-const REFRESH_INTERVAL_MS = 30000;
 
 const stateColors: Record<string, string> = {
   Stable: 'green',
@@ -66,25 +63,20 @@ const ConsumerGroupDetail: React.FC = () => {
     loadDetail();
   }, [loadDetail]);
 
-  useEffect(() => {
-    if (!selectedCluster || !decodedGroupId) return;
-    const timer = window.setInterval(() => loadDetail(true), REFRESH_INTERVAL_MS);
-    return () => window.clearInterval(timer);
-  }, [selectedCluster, decodedGroupId, loadDetail]);
-
   if (loading && !detail) return <Spin size="large" style={{ display: 'block', margin: '60px auto' }} />;
   if (error && !detail) return <Alert type="error" message={t('consumerGroupDetail.loadFailed')} description={error} />;
   if (!detail) return null;
 
-  const memberColumns = [
-    { title: t('consumerGroupDetail.memberId'), dataIndex: 'id', key: 'id' },
-    { title: t('consumerGroupDetail.clientId'), dataIndex: 'clientId', key: 'clientId' },
-    { title: t('consumerGroupDetail.host'), dataIndex: 'clientHost', key: 'clientHost' },
+  const memberColumns: ResizableColumn<(typeof detail.members)[number]>[] = [
+    { title: t('consumerGroupDetail.memberId'), dataIndex: 'id', key: 'id', width: 180, ellipsis: true },
+    { title: t('consumerGroupDetail.clientId'), dataIndex: 'clientId', key: 'clientId', width: 160, ellipsis: true },
+    { title: t('consumerGroupDetail.host'), dataIndex: 'clientHost', key: 'clientHost', width: 140, ellipsis: true },
     {
       title: t('consumerGroupDetail.memberStrategy'),
       dataIndex: 'assignmentStrategies',
       key: 'assignmentStrategies',
       width: 160,
+      ellipsis: true,
       render: (v: string | undefined) => v || '-',
     },
     {
@@ -94,11 +86,17 @@ const ConsumerGroupDetail: React.FC = () => {
       width: 140,
       render: (type: string | undefined) => rebalanceLabel(type, t),
     },
-    { title: t('consumerGroupDetail.assignments'), dataIndex: 'assignments', key: 'assignments' },
+    {
+      title: t('consumerGroupDetail.assignments'),
+      dataIndex: 'assignments',
+      key: 'assignments',
+      width: 320,
+      ellipsis: true,
+    },
   ];
 
-  const offsetColumns = [
-    { title: t('consumerGroupDetail.topic'), dataIndex: 'topic', key: 'topic' },
+  const offsetColumns: ResizableColumn<(typeof detail.offsets)[number]>[] = [
+    { title: t('consumerGroupDetail.topic'), dataIndex: 'topic', key: 'topic', width: 220, ellipsis: true },
     { title: t('common.partition'), dataIndex: 'partition', key: 'partition', width: 100 },
     {
       title: t('consumerGroupDetail.offset'),
@@ -132,12 +130,9 @@ const ConsumerGroupDetail: React.FC = () => {
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/consumer-groups')}>
           {t('consumerGroupDetail.back')}
         </Button>
-        <Space>
-          <Text type="secondary">{t('consumerGroupDetail.autoRefreshHint')}</Text>
-          <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => loadDetail(true)}>
-            {t('consumerGroupDetail.refresh')}
-          </Button>
-        </Space>
+        <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => loadDetail(true)}>
+          {t('consumerGroupDetail.refresh')}
+        </Button>
       </div>
 
       {error && (
@@ -161,7 +156,7 @@ const ConsumerGroupDetail: React.FC = () => {
       {detail.members.length > 0 && (
         <>
           <h3>{t('consumerGroupDetail.membersTitle')}</h3>
-          <Table
+          <ResizableTable
             columns={memberColumns}
             dataSource={detail.members}
             rowKey="id"
@@ -173,7 +168,7 @@ const ConsumerGroupDetail: React.FC = () => {
       )}
 
       <h3>{t('consumerGroupDetail.offsetsLag')}</h3>
-      <Table
+      <ResizableTable
         columns={offsetColumns}
         dataSource={detail.offsets}
         rowKey={(r) => `${r.topic}-${r.partition}`}

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Descriptions,
-  Table,
   Spin,
   Alert,
   Button,
@@ -19,8 +18,9 @@ import {
 } from 'antd';
 import { ArrowLeftOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { useCluster } from '../components/Layout';
+import { ResizableTable, type ResizableColumn } from '../components/ResizableTable';
 import { getTopicDetail, getTopicConfigs, updateTopicConfigs, increaseTopicPartitions } from '../api/client';
-import type { TopicDetail as TopicDetailType, TopicConfigEntry } from '../types';
+import type { TopicDetail as TopicDetailType, PartitionInfo, TopicConfigEntry } from '../types';
 
 const SELECT_OPTIONS: Record<string, string[]> = {
   'cleanup.policy': ['delete', 'compact', 'compact,delete', 'delete,compact'],
@@ -142,7 +142,7 @@ const TopicDetail: React.FC = () => {
   if (error) return <Alert type="error" message={t('topicDetail.loadFailed')} description={error} />;
   if (!detail) return null;
 
-  const partitionColumns = [
+  const partitionColumns: ResizableColumn<PartitionInfo>[] = [
     { title: t('common.partition'), dataIndex: 'partition', key: 'partition', width: 100 },
     { title: t('topicDetail.leader'), dataIndex: 'leader', key: 'leader', width: 80 },
     {
@@ -182,7 +182,7 @@ const TopicDetail: React.FC = () => {
     },
   ];
 
-  const configColumns = [
+  const configColumns: ResizableColumn<TopicConfigEntry>[] = [
     {
       title: t('topicDetail.configName'),
       dataIndex: 'name',
@@ -194,6 +194,7 @@ const TopicDetail: React.FC = () => {
       title: t('topicDetail.configValue'),
       dataIndex: 'value',
       key: 'value',
+      width: 240,
       ellipsis: true,
       render: (v: string) => v || '-',
     },
@@ -221,6 +222,7 @@ const TopicDetail: React.FC = () => {
       title: t('topicDetail.configDoc'),
       dataIndex: 'documentation',
       key: 'documentation',
+      width: 260,
       ellipsis: true,
       render: (doc: string) =>
         doc ? (
@@ -267,26 +269,24 @@ const TopicDetail: React.FC = () => {
       {configsError && (
         <Alert type="error" message={t('topicDetail.configsLoadFailed')} description={configsError} style={{ marginBottom: 16 }} />
       )}
-      <Table
+      <ResizableTable
         columns={configColumns}
         dataSource={configs}
         rowKey="name"
         loading={configsLoading}
         pagination={{ pageSize: 15, showSizeChanger: true }}
         size="small"
-        scroll={{ x: 900 }}
         locale={{ emptyText: t('topicDetail.noConfigs') }}
         style={{ marginBottom: 24 }}
       />
 
       <h3>{t('topicDetail.partitionsTitle')}</h3>
-      <Table
+      <ResizableTable
         columns={partitionColumns}
         dataSource={detail.partitions}
         rowKey="partition"
         pagination={false}
         size="small"
-        scroll={{ x: 800 }}
       />
 
       <Modal

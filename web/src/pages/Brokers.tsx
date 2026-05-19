@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Table, Tag, Spin, Alert, Button, Space } from 'antd';
+import { Tag, Spin, Alert, Button, Space } from 'antd';
+import { ResizableTable, type ResizableColumn } from '../components/ResizableTable';
 import { ReloadOutlined, CrownOutlined } from '@ant-design/icons';
 import { useCluster } from '../components/Layout';
 import { listBrokers } from '../api/client';
@@ -36,7 +37,7 @@ const Brokers: React.FC = () => {
     loadBrokers();
   }, [loadBrokers]);
 
-  const columns = [
+  const columns: ResizableColumn<BrokerInfo>[] = [
     {
       title: t('brokers.brokerId'),
       dataIndex: 'id',
@@ -82,11 +83,12 @@ const Brokers: React.FC = () => {
     },
   ];
 
-  const assignmentColumns = [
+  const assignmentColumns: ResizableColumn<BrokerTopicAssignment>[] = [
     {
       title: t('consumerGroupDetail.topic'),
       dataIndex: 'topic',
       key: 'topic',
+      width: 260,
       render: (topic: string) => (
         <Button type="link" size="small" style={{ padding: 0 }} onClick={() => navigate(`/topics/${encodeURIComponent(topic)}`)}>
           {topic}
@@ -130,7 +132,7 @@ const Brokers: React.FC = () => {
 
       {error && <Alert type="error" message={t('brokers.loadFailed')} description={error} style={{ marginBottom: 16 }} />}
 
-      <Table
+      <ResizableTable
         columns={columns}
         dataSource={brokers}
         rowKey="id"
@@ -140,7 +142,7 @@ const Brokers: React.FC = () => {
         locale={{ emptyText: t('brokers.noBrokers') }}
         expandable={{
           expandedRowRender: (record: BrokerInfo) => (
-            <Table<BrokerTopicAssignment>
+            <ResizableTable<BrokerTopicAssignment>
               columns={assignmentColumns}
               dataSource={record.assignments}
               rowKey={(row) => `${row.topic}-${row.partition}-${row.role}`}

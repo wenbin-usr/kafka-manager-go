@@ -160,7 +160,6 @@ export default {
     lag: 'Lag',
     loadFailed: 'Failed to load consumer group detail',
     refresh: 'Refresh',
-    autoRefreshHint: 'Auto-refreshes every 30 seconds',
   },
   messageViewer: {
     title: 'Message Viewer',

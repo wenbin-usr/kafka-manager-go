@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Table, Input, Button, Space, message, Popconfirm, Tag } from 'antd';
+import { Input, Button, Space, message, Popconfirm, Tag } from 'antd';
+import { ResizableTable, type ResizableColumn } from '../components/ResizableTable';
 import { ReloadOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useCluster } from '../components/Layout';
@@ -65,11 +66,12 @@ const ConsumerGroups: React.FC = () => {
 
   const filtered = groups.filter((g) => g.groupId.toLowerCase().includes(search.toLowerCase()));
 
-  const columns = [
+  const columns: ResizableColumn<ConsumerGroupInfo>[] = [
     {
       title: t('consumerGroups.groupId'),
       dataIndex: 'groupId',
       key: 'groupId',
+      width: 240,
       render: (groupId: string) => (
         <a onClick={() => navigate(`/consumer-groups/${encodeURIComponent(groupId)}`)}>{groupId}</a>
       ),
@@ -135,7 +137,7 @@ const ConsumerGroups: React.FC = () => {
         </Space>
       </div>
 
-      <Table
+      <ResizableTable
         columns={columns}
         dataSource={filtered}
         rowKey="groupId"

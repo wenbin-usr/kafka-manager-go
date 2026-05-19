@@ -5,7 +5,6 @@ import {
   InputNumber,
   Button,
   Space,
-  Table,
   Tag,
   Spin,
   Alert,
@@ -31,6 +30,7 @@ import {
 } from '@ant-design/icons';
 import { exportMessages, type MessageExportFormat } from '../utils/messageExport';
 import { useCluster } from '../components/Layout';
+import { ResizableTable, type ResizableColumn } from '../components/ResizableTable';
 import { listTopics, readMessages, produceMessage } from '../api/client';
 import type { TopicInfo, MessageRecord, MessageHeader } from '../types';
 
@@ -202,7 +202,7 @@ const MessageViewer: React.FC = () => {
     color: active ? token.colorPrimary : token.colorTextQuaternary,
   });
 
-  const columns = [
+  const columns: ResizableColumn<MessageRecord>[] = [
     {
       title: t('common.partition'),
       dataIndex: 'partition',
@@ -227,6 +227,7 @@ const MessageViewer: React.FC = () => {
       title: t('messageViewer.value'),
       dataIndex: 'value',
       key: 'value',
+      width: 360,
       ellipsis: true,
       render: (value: string, record: MessageRecord) => (
         <Space
@@ -374,7 +375,7 @@ const MessageViewer: React.FC = () => {
       )}
 
       {!loading && (
-        <Table
+        <ResizableTable
           columns={columns}
           dataSource={sortedMessages}
           rowKey={(r) => `${r.partition}-${r.offset}`}
@@ -429,42 +430,45 @@ const MessageViewer: React.FC = () => {
             <div style={{ marginTop: 16 }}>
               <Text strong>{t('messageViewer.headers')}</Text>
               {detailMessage.headers?.length ? (
-                <Table
+                <ResizableTable<MessageHeader>
                   style={{ marginTop: 8 }}
                   size="small"
                   bordered
                   pagination={false}
                   rowKey={(row, index) => `${row.key}-${index}`}
                   dataSource={detailMessage.headers}
-                  columns={[
-                    {
-                      title: t('messageViewer.key'),
-                      dataIndex: 'key',
-                      key: 'key',
-                      width: 180,
-                      ellipsis: true,
-                    },
-                    {
-                      title: t('messageViewer.value'),
-                      dataIndex: 'value',
-                      key: 'value',
-                      ellipsis: true,
-                      render: (v: string, row: MessageHeader) => (
-                        <Space size={4}>
-                          {row.encoding === 'base64' && (
-                            <Tag color="orange">{t('messageViewer.headerEncodingBase64')}</Tag>
-                          )}
-                          <Text
-                            copyable={{ text: v, tooltips: [t('messageViewer.copy'), t('messageViewer.copied')] }}
-                            ellipsis={{ tooltip: v }}
-                            style={{ maxWidth: 420 }}
-                          >
-                            {emptyDisplay(v)}
-                          </Text>
-                        </Space>
-                      ),
-                    },
-                  ]}
+                  columns={
+                    [
+                      {
+                        title: t('messageViewer.key'),
+                        dataIndex: 'key',
+                        key: 'key',
+                        width: 180,
+                        ellipsis: true,
+                      },
+                      {
+                        title: t('messageViewer.value'),
+                        dataIndex: 'value',
+                        key: 'value',
+                        width: 420,
+                        ellipsis: true,
+                        render: (v: string, row: MessageHeader) => (
+                          <Space size={4}>
+                            {row.encoding === 'base64' && (
+                              <Tag color="orange">{t('messageViewer.headerEncodingBase64')}</Tag>
+                            )}
+                            <Text
+                              copyable={{ text: v, tooltips: [t('messageViewer.copy'), t('messageViewer.copied')] }}
+                              ellipsis={{ tooltip: v }}
+                              style={{ maxWidth: '100%' }}
+                            >
+                              {emptyDisplay(v)}
+                            </Text>
+                          </Space>
+                        ),
+                      },
+                    ] satisfies ResizableColumn<MessageHeader>[]
+                  }
                 />
               ) : (
                 <div style={{ marginTop: 8, color: token.colorTextSecondary }}>{t('messageViewer.noHeaders')}</div>

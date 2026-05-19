@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Table, Button, Input, Modal, Form, InputNumber, Space, message, Popconfirm, Tag } from 'antd';
+import { Button, Input, Modal, Form, InputNumber, Space, message, Popconfirm, Tag } from 'antd';
+import { ResizableTable, type ResizableColumn } from '../components/ResizableTable';
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useCluster } from '../components/Layout';
@@ -63,11 +64,12 @@ const Topics: React.FC = () => {
 
   const filtered = topics.filter((topic) => topic.name.toLowerCase().includes(search.toLowerCase()));
 
-  const columns = [
+  const columns: ResizableColumn<TopicInfo>[] = [
     {
       title: t('common.name'),
       dataIndex: 'name',
       key: 'name',
+      width: 280,
       render: (name: string) => (
         <a onClick={() => navigate(`/topics/${encodeURIComponent(name)}`)}>{name}</a>
       ),
@@ -122,7 +124,7 @@ const Topics: React.FC = () => {
         </Space>
       </div>
 
-      <Table
+      <ResizableTable
         columns={columns}
         dataSource={filtered}
         rowKey="name"

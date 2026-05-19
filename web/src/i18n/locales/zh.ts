@@ -160,7 +160,6 @@ export default {
     lag: 'Lag',
     loadFailed: '加载消费者组详情失败',
     refresh: '刷新',
-    autoRefreshHint: '每 30 秒自动刷新',
   },
   messageViewer: {
     title: '消息浏览',
