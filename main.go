@@ -41,6 +41,7 @@ func main() {
 		// Clusters
 		api.GET("/clusters", clusterHandler.ListClusters)
 		api.POST("/clusters", clusterHandler.AddCluster)
+		api.PUT("/clusters/:id", clusterHandler.UpdateCluster)
 		api.DELETE("/clusters/:id", clusterHandler.RemoveCluster)
 		api.GET("/clusters/:id/overview", clusterHandler.GetOverview)
 		api.GET("/clusters/:id/brokers", brokerHandler.ListBrokers)

@@ -9,6 +9,12 @@ type ClusterConfig struct {
 	Brokers string `json:"brokers"`
 }
 
+// ClusterListItem is returned when listing clusters with live health status.
+type ClusterListItem struct {
+	ClusterConfig
+	Status string `json:"status"` // online or offline
+}
+
 // TopicInfo represents basic topic information
 type TopicInfo struct {
 	Name              string `json:"name"`
@@ -61,26 +67,39 @@ type CreateTopicRequest struct {
 
 // ConsumerGroupInfo represents basic consumer group information
 type ConsumerGroupInfo struct {
-	GroupID string `json:"groupId"`
-	State   string `json:"state"`
-	Members int    `json:"members"`
+	GroupID              string `json:"groupId"`
+	State                string `json:"state"`
+	Members              int    `json:"members"`
+	AssignmentStrategies string `json:"assignmentStrategies,omitempty"`
+	RebalanceType        string `json:"rebalanceType,omitempty"` // eager or cooperative
 }
 
 // ConsumerGroupDetail represents detailed consumer group information
 type ConsumerGroupDetail struct {
-	GroupID  string           `json:"groupId"`
-	State    string           `json:"state"`
-	Members  []ConsumerMember `json:"members"`
-	Offsets  []ConsumerOffset `json:"offsets"`
-	TotalLag int64            `json:"totalLag"`
+	GroupID              string           `json:"groupId"`
+	State                string           `json:"state"`
+	AssignmentStrategies string           `json:"assignmentStrategies,omitempty"`
+	RebalanceType        string           `json:"rebalanceType,omitempty"`
+	Members              []ConsumerMember `json:"members"`
+	Offsets              []ConsumerOffset `json:"offsets"`
+	TotalLag             int64            `json:"totalLag"`
+}
+
+// MemberTopicAssignment is partition assignment for one topic
+type MemberTopicAssignment struct {
+	Topic      string `json:"topic"`
+	Partitions []int  `json:"partitions"`
 }
 
 // ConsumerMember represents a member of a consumer group
 type ConsumerMember struct {
-	ID          string `json:"id"`
-	ClientID    string `json:"clientId"`
-	ClientHost  string `json:"clientHost"`
-	Assignments string `json:"assignments"`
+	ID                   string                  `json:"id"`
+	ClientID             string                  `json:"clientId"`
+	ClientHost           string                  `json:"clientHost"`
+	AssignmentStrategies string                  `json:"assignmentStrategies,omitempty"`
+	RebalanceType        string                  `json:"rebalanceType,omitempty"`
+	TopicAssignments     []MemberTopicAssignment `json:"topicAssignments,omitempty"`
+	Assignments          string                  `json:"assignments"`
 }
 
 // ConsumerOffset represents a consumer group offset for a topic-partition

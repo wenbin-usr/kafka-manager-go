@@ -16,8 +16,20 @@ import {
   Modal,
   Descriptions,
   Form,
+  Dropdown,
 } from 'antd';
-import { SearchOutlined, ReloadOutlined, CaretUpOutlined, CaretDownOutlined, CopyOutlined, SendOutlined, PlusOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  ReloadOutlined,
+  CaretUpOutlined,
+  CaretDownOutlined,
+  CopyOutlined,
+  SendOutlined,
+  PlusOutlined,
+  MinusCircleOutlined,
+  DownloadOutlined,
+} from '@ant-design/icons';
+import { exportMessages, type MessageExportFormat } from '../utils/messageExport';
 import { useCluster } from '../components/Layout';
 import { listTopics, readMessages, produceMessage } from '../api/client';
 import type { TopicInfo, MessageRecord, MessageHeader } from '../types';
@@ -133,6 +145,15 @@ const MessageViewer: React.FC = () => {
   const openProduceModal = () => {
     produceForm.setFieldsValue({ key: '', value: '', partition: undefined, headers: [] });
     setProduceOpen(true);
+  };
+
+  const handleExport = (format: MessageExportFormat) => {
+    if (!selectedTopic || sortedMessages.length === 0) {
+      message.warning(t('messageViewer.exportEmpty'));
+      return;
+    }
+    exportMessages(sortedMessages, selectedTopic, format);
+    message.success(t('messageViewer.exportSuccess', { count: sortedMessages.length }));
   };
 
   const handleProduce = async () => {
@@ -327,6 +348,18 @@ const MessageViewer: React.FC = () => {
         <Button icon={<SendOutlined />} onClick={openProduceModal} disabled={!selectedTopic}>
           {t('messageViewer.produce')}
         </Button>
+        <Dropdown
+          menu={{
+            items: [
+              { key: 'json', label: t('messageViewer.exportJson') },
+              { key: 'csv', label: t('messageViewer.exportCsv') },
+            ],
+            onClick: ({ key }) => handleExport(key as MessageExportFormat),
+          }}
+          disabled={!searched || sortedMessages.length === 0}
+        >
+          <Button icon={<DownloadOutlined />}>{t('messageViewer.export')}</Button>
+        </Dropdown>
       </Space>
 
       {loading && <Spin size="large" style={{ display: 'block', margin: '40px auto' }} />}

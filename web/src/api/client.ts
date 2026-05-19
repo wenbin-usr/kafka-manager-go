@@ -36,6 +36,10 @@ export async function addCluster(name: string, brokers: string): Promise<Cluster
   return unwrap<ClusterConfig>(await api.post('/clusters', { name, brokers }));
 }
 
+export async function updateCluster(id: string, name: string, brokers: string): Promise<ClusterConfig> {
+  return unwrap<ClusterConfig>(await api.put(`/clusters/${id}`, { name, brokers }));
+}
+
 export async function removeCluster(id: string): Promise<void> {
   unwrap(await api.delete(`/clusters/${id}`));
 }

@@ -25,23 +25,32 @@ func ListConsumerGroups(brokers string) ([]model.ConsumerGroupInfo, error) {
 	}
 
 	result := make([]model.ConsumerGroupInfo, 0, len(resp.Groups))
+	byID := make(map[string]*model.ConsumerGroupInfo, len(resp.Groups))
 	for _, g := range resp.Groups {
-		result = append(result, model.ConsumerGroupInfo{
-			GroupID: g.GroupID,
-		})
+		info := model.ConsumerGroupInfo{GroupID: g.GroupID}
+		result = append(result, info)
+		byID[g.GroupID] = &result[len(result)-1]
 	}
 
-	// Get state and member counts via DescribeGroups
+	// Get state, assignor protocol, and member counts via DescribeGroups
 	if len(groupIDs) > 0 {
-		describeResp, err := client.DescribeGroups(context.Background(), &kafka.DescribeGroupsRequest{
+		ctx := context.Background()
+		protocols, _ := fetchGroupAssignorProtocols(ctx, brokers, groupIDs)
+
+		describeResp, err := client.DescribeGroups(ctx, &kafka.DescribeGroupsRequest{
 			GroupIDs: groupIDs,
 		})
 		if err == nil {
-			for i, g := range describeResp.Groups {
-				if i < len(result) {
-					result[i].State = g.GroupState
-					result[i].Members = len(g.Members)
+			for _, g := range describeResp.Groups {
+				info, ok := byID[g.GroupID]
+				if !ok {
+					continue
 				}
+				strategies, rebalanceType, _ := enrichConsumerGroupFromDescribe(g, protocols[g.GroupID])
+				info.State = g.GroupState
+				info.Members = len(g.Members)
+				info.AssignmentStrategies = strategies
+				info.RebalanceType = rebalanceType
 			}
 		}
 	}
@@ -70,22 +79,16 @@ func GetConsumerGroupDetail(brokers, groupID string) (*model.ConsumerGroupDetail
 	}
 
 	group := describeResp.Groups[0]
+	ctx := context.Background()
+	protocols, _ := fetchGroupAssignorProtocols(ctx, brokers, []string{groupID})
+	strategies, rebalanceType, members := enrichConsumerGroupFromDescribe(group, protocols[groupID])
 	detail := &model.ConsumerGroupDetail{
-		GroupID: groupID,
-		State:   group.GroupState,
-		Members: make([]model.ConsumerMember, 0, len(group.Members)),
-		Offsets: make([]model.ConsumerOffset, 0),
-	}
-
-	// Process members
-	for _, m := range group.Members {
-		assignments := fmt.Sprintf("%d topic(s)", len(m.MemberAssignments.Topics))
-		detail.Members = append(detail.Members, model.ConsumerMember{
-			ID:          m.MemberID,
-			ClientID:    m.ClientID,
-			ClientHost:  m.ClientHost,
-			Assignments: assignments,
-		})
+		GroupID:              groupID,
+		State:                group.GroupState,
+		AssignmentStrategies: strategies,
+		RebalanceType:        rebalanceType,
+		Members:              members,
+		Offsets:              make([]model.ConsumerOffset, 0),
 	}
 
 	// Get offsets (nil Topics = fetch all for the group)

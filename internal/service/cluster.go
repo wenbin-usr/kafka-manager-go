@@ -109,6 +109,37 @@ func (cs *ClusterStore) AddCluster(name, brokers string) (model.ClusterConfig, e
 	return cluster, nil
 }
 
+// UpdateCluster updates cluster name and brokers after validating connection.
+func (cs *ClusterStore) UpdateCluster(id, name, brokers string) (model.ClusterConfig, error) {
+	if err := ValidateClusterConnection(brokers); err != nil {
+		return model.ClusterConfig{}, fmt.Errorf("cannot connect to brokers: %w", err)
+	}
+
+	cs.mu.Lock()
+	existing, ok := cs.clusters[id]
+	if !ok {
+		cs.mu.Unlock()
+		return model.ClusterConfig{}, fmt.Errorf("cluster not found")
+	}
+
+	updated := model.ClusterConfig{
+		ID:      id,
+		Name:    name,
+		Brokers: brokers,
+	}
+	cs.clusters[id] = updated
+	cs.mu.Unlock()
+
+	if err := cs.save(); err != nil {
+		cs.mu.Lock()
+		cs.clusters[id] = existing
+		cs.mu.Unlock()
+		return model.ClusterConfig{}, fmt.Errorf("failed to save cluster: %w", err)
+	}
+
+	return updated, nil
+}
+
 // RemoveCluster removes a cluster by ID
 func (cs *ClusterStore) RemoveCluster(id string) error {
 	cs.mu.Lock()
@@ -119,11 +150,9 @@ func (cs *ClusterStore) RemoveCluster(id string) error {
 
 // ValidateClusterConnection checks if we can connect to the given brokers
 func ValidateClusterConnection(brokers string) error {
-	conn, err := kafka.Dial("tcp", brokers)
-	if err != nil {
-		return err
+	if CheckClusterHealth(brokers) != ClusterStatusOnline {
+		return fmt.Errorf("no reachable broker in %q", brokers)
 	}
-	conn.Close()
 	return nil
 }
 

@@ -1,7 +1,10 @@
+export type ClusterStatus = 'online' | 'offline';
+
 export interface ClusterConfig {
   id: string;
   name: string;
   brokers: string;
+  status?: ClusterStatus;
 }
 
 export interface TopicInfo {
@@ -42,12 +45,22 @@ export interface ConsumerGroupInfo {
   groupId: string;
   state: string;
   members: number;
+  assignmentStrategies?: string;
+  rebalanceType?: 'eager' | 'cooperative' | string;
+}
+
+export interface MemberTopicAssignment {
+  topic: string;
+  partitions: number[];
 }
 
 export interface ConsumerMember {
   id: string;
   clientId: string;
   clientHost: string;
+  assignmentStrategies?: string;
+  rebalanceType?: 'eager' | 'cooperative' | string;
+  topicAssignments?: MemberTopicAssignment[];
   assignments: string;
 }
 
@@ -62,6 +75,8 @@ export interface ConsumerOffset {
 export interface ConsumerGroupDetail {
   groupId: string;
   state: string;
+  assignmentStrategies?: string;
+  rebalanceType?: 'eager' | 'cooperative' | string;
   members: ConsumerMember[];
   offsets: ConsumerOffset[];
   totalLag: number;

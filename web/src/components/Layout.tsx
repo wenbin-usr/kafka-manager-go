@@ -13,6 +13,8 @@ import {
   Space,
   Typography,
   Segmented,
+  Tag,
+  Badge,
   theme,
 } from 'antd';
 import {
@@ -22,12 +24,13 @@ import {
   TeamOutlined,
   MessageOutlined,
   PlusOutlined,
+  EditOutlined,
   DeleteOutlined,
   SunOutlined,
   MoonOutlined,
 } from '@ant-design/icons';
 import type { ClusterConfig } from '../types';
-import { listClusters, addCluster, removeCluster } from '../api/client';
+import { listClusters, addCluster, updateCluster, removeCluster } from '../api/client';
 import { useAppSettings } from '../context/AppSettings';
 import AppLogo from './AppLogo';
 
@@ -57,11 +60,32 @@ const Layout: React.FC = () => {
   const [clusters, setClusters] = useState<ClusterConfig[]>([]);
   const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [form] = Form.useForm();
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addForm] = Form.useForm();
+  const [editForm] = Form.useForm();
   const navigate = useNavigate();
   const location = useLocation();
 
   const selectedCluster = clusters.find((c) => c.id === selectedClusterId) || null;
+
+  const clusterStatusTag = (status?: ClusterConfig['status']) => {
+    if (status === 'online') {
+      return <Tag color="success">{t('layout.statusOnline')}</Tag>;
+    }
+    if (status === 'offline') {
+      return <Tag color="error">{t('layout.statusOffline')}</Tag>;
+    }
+    return null;
+  };
+
+  const clusterOptionLabel = (c: ClusterConfig) => (
+    <Space size="small">
+      <Badge status={c.status === 'online' ? 'success' : c.status === 'offline' ? 'error' : 'default'} />
+      <span>
+        {c.name} ({c.brokers})
+      </span>
+    </Space>
+  );
 
   const refreshClusters = useCallback(async () => {
     try {
@@ -80,18 +104,45 @@ const Layout: React.FC = () => {
 
   useEffect(() => {
     refreshClusters();
-  }, []);
+    const timer = window.setInterval(() => {
+      refreshClusters();
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, [refreshClusters]);
 
   const handleAddCluster = async (values: { name: string; brokers: string }) => {
     try {
       const cluster = await addCluster(values.name, values.brokers);
       setSelectedClusterId(cluster.id);
       setAddModalOpen(false);
-      form.resetFields();
+      addForm.resetFields();
       await refreshClusters();
       message.success(t('layout.clusterAdded'));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('layout.addClusterFailed');
+      message.error(msg);
+    }
+  };
+
+  const openEditModal = () => {
+    if (!selectedCluster) return;
+    editForm.setFieldsValue({
+      name: selectedCluster.name,
+      brokers: selectedCluster.brokers,
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateCluster = async (values: { name: string; brokers: string }) => {
+    if (!selectedClusterId) return;
+    try {
+      await updateCluster(selectedClusterId, values.name, values.brokers);
+      setEditModalOpen(false);
+      editForm.resetFields();
+      await refreshClusters();
+      message.success(t('layout.clusterUpdated'));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t('layout.updateClusterFailed');
       message.error(msg);
     }
   };
@@ -168,14 +219,23 @@ const Layout: React.FC = () => {
           >
             <Space>
               <Select
-                style={{ width: 250 }}
+                style={{ width: 320 }}
                 placeholder={t('layout.selectCluster')}
                 value={selectedClusterId || undefined}
                 onChange={setSelectedClusterId}
-                options={clusters.map((c) => ({ label: `${c.name} (${c.brokers})`, value: c.id }))}
+                optionLabelProp="label"
+                options={clusters.map((c) => ({
+                  value: c.id,
+                  label: `${c.name} (${c.brokers})`,
+                  title: c.brokers,
+                  c,
+                }))}
+                optionRender={(option) => clusterOptionLabel((option.data as { c: ClusterConfig }).c)}
                 notFoundContent={t('layout.noClusters')}
               />
+              {selectedCluster && clusterStatusTag(selectedCluster.status)}
               <Button icon={<PlusOutlined />} onClick={() => setAddModalOpen(true)} />
+              <Button icon={<EditOutlined />} disabled={!selectedClusterId} onClick={openEditModal} />
               <Button
                 icon={<DeleteOutlined />}
                 danger
@@ -231,11 +291,38 @@ const Layout: React.FC = () => {
         open={addModalOpen}
         onCancel={() => {
           setAddModalOpen(false);
-          form.resetFields();
+          addForm.resetFields();
         }}
-        onOk={() => form.submit()}
+        onOk={() => addForm.submit()}
       >
-        <Form form={form} layout="vertical" onFinish={handleAddCluster}>
+        <Form form={addForm} layout="vertical" onFinish={handleAddCluster}>
+          <Form.Item
+            name="name"
+            label={t('layout.clusterName')}
+            rules={[{ required: true, message: t('layout.clusterNameRequired') }]}
+          >
+            <Input placeholder={t('layout.clusterNamePlaceholder')} />
+          </Form.Item>
+          <Form.Item
+            name="brokers"
+            label={t('layout.brokerAddresses')}
+            rules={[{ required: true, message: t('layout.brokersRequired') }]}
+          >
+            <Input placeholder={t('layout.brokersPlaceholder')} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title={t('layout.editKafkaCluster')}
+        open={editModalOpen}
+        onCancel={() => {
+          setEditModalOpen(false);
+          editForm.resetFields();
+        }}
+        onOk={() => editForm.submit()}
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleUpdateCluster}>
           <Form.Item
             name="name"
             label={t('layout.clusterName')}

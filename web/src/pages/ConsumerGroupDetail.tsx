@@ -15,6 +15,12 @@ const stateColors: Record<string, string> = {
   Dead: 'red',
 };
 
+const rebalanceLabel = (type: string | undefined, t: (key: string) => string) => {
+  if (type === 'cooperative') return t('consumerGroupDetail.rebalanceCooperative');
+  if (type === 'eager') return t('consumerGroupDetail.rebalanceEager');
+  return '-';
+};
+
 const ConsumerGroupDetail: React.FC = () => {
   const { t } = useTranslation();
   const { group: groupId } = useParams<{ group: string }>();
@@ -42,6 +48,20 @@ const ConsumerGroupDetail: React.FC = () => {
     { title: t('consumerGroupDetail.memberId'), dataIndex: 'id', key: 'id' },
     { title: t('consumerGroupDetail.clientId'), dataIndex: 'clientId', key: 'clientId' },
     { title: t('consumerGroupDetail.host'), dataIndex: 'clientHost', key: 'clientHost' },
+    {
+      title: t('consumerGroupDetail.memberStrategy'),
+      dataIndex: 'assignmentStrategies',
+      key: 'assignmentStrategies',
+      width: 160,
+      render: (v: string | undefined) => v || '-',
+    },
+    {
+      title: t('consumerGroupDetail.rebalanceType'),
+      dataIndex: 'rebalanceType',
+      key: 'rebalanceType',
+      width: 140,
+      render: (type: string | undefined) => rebalanceLabel(type, t),
+    },
     { title: t('consumerGroupDetail.assignments'), dataIndex: 'assignments', key: 'assignments' },
   ];
 
@@ -85,6 +105,12 @@ const ConsumerGroupDetail: React.FC = () => {
       <Descriptions title={t('consumerGroupDetail.title', { groupId: detail.groupId })} bordered column={3} style={{ marginBottom: 24 }}>
         <Descriptions.Item label={t('consumerGroups.state')}>
           <Tag color={stateColors[detail.state] || 'default'}>{detail.state}</Tag>
+        </Descriptions.Item>
+        <Descriptions.Item label={t('consumerGroupDetail.assignmentStrategy')}>
+          {detail.assignmentStrategies || '-'}
+        </Descriptions.Item>
+        <Descriptions.Item label={t('consumerGroupDetail.rebalanceType')}>
+          {rebalanceLabel(detail.rebalanceType, t)}
         </Descriptions.Item>
         <Descriptions.Item label={t('consumerGroups.members')}>{detail.members.length}</Descriptions.Item>
         <Descriptions.Item label={t('consumerGroupDetail.totalLag')}>{detail.totalLag.toLocaleString()}</Descriptions.Item>

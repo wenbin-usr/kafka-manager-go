@@ -15,6 +15,16 @@ const stateColors: Record<string, string> = {
   Dead: 'red',
 };
 
+const rebalanceTag = (type: string | undefined, t: (key: string) => string) => {
+  if (type === 'cooperative') {
+    return <Tag color="blue">{t('consumerGroups.rebalanceCooperative')}</Tag>;
+  }
+  if (type === 'eager') {
+    return <Tag color="purple">{t('consumerGroups.rebalanceEager')}</Tag>;
+  }
+  return <span>{t('consumerGroups.unknownStrategy')}</span>;
+};
+
 const ConsumerGroups: React.FC = () => {
   const { t } = useTranslation();
   const { selectedCluster } = useCluster();
@@ -70,6 +80,20 @@ const ConsumerGroups: React.FC = () => {
       key: 'state',
       width: 180,
       render: (state: string) => <Tag color={stateColors[state] || 'default'}>{state}</Tag>,
+    },
+    {
+      title: t('consumerGroups.assignmentStrategy'),
+      dataIndex: 'assignmentStrategies',
+      key: 'assignmentStrategies',
+      width: 200,
+      render: (strategies: string | undefined) => strategies || t('consumerGroups.unknownStrategy'),
+    },
+    {
+      title: t('consumerGroups.rebalanceType'),
+      dataIndex: 'rebalanceType',
+      key: 'rebalanceType',
+      width: 160,
+      render: (type: string | undefined) => rebalanceTag(type, t),
     },
     {
       title: t('consumerGroups.members'),

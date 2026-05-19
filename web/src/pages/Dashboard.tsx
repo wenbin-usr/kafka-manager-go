@@ -39,11 +39,29 @@ const Dashboard: React.FC = () => {
       value: overview?.brokerCount ?? 0,
       icon: <CloudServerOutlined />,
       color: '#1677ff',
-      onClick: () => navigate('/brokers'),
+      path: '/brokers',
     },
-    { title: t('dashboard.topics'), value: overview?.topicCount ?? 0, icon: <UnorderedListOutlined />, color: '#52c41a' },
-    { title: t('dashboard.partitions'), value: overview?.partitionCount ?? 0, icon: <PartitionOutlined />, color: '#faad14' },
-    { title: t('dashboard.consumerGroups'), value: overview?.consumerGroupCount ?? 0, icon: <TeamOutlined />, color: '#722ed1' },
+    {
+      title: t('dashboard.topics'),
+      value: overview?.topicCount ?? 0,
+      icon: <UnorderedListOutlined />,
+      color: '#52c41a',
+      path: '/topics',
+    },
+    {
+      title: t('dashboard.partitions'),
+      value: overview?.partitionCount ?? 0,
+      icon: <PartitionOutlined />,
+      color: '#faad14',
+      path: '/topics',
+    },
+    {
+      title: t('dashboard.consumerGroups'),
+      value: overview?.consumerGroupCount ?? 0,
+      icon: <TeamOutlined />,
+      color: '#722ed1',
+      path: '/consumer-groups',
+    },
   ];
 
   return (
@@ -53,9 +71,9 @@ const Dashboard: React.FC = () => {
         {cards.map((c) => (
           <Col xs={24} sm={12} lg={6} key={c.title}>
             <Card
-              hoverable={!!c.onClick}
-              onClick={c.onClick}
-              style={c.onClick ? { cursor: 'pointer' } : undefined}
+              hoverable
+              onClick={() => navigate(c.path)}
+              style={{ cursor: 'pointer' }}
             >
               <Statistic
                 title={c.title}
