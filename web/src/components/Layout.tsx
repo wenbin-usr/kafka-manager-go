@@ -17,6 +17,7 @@ import {
 } from 'antd';
 import {
   DashboardOutlined,
+  CloudServerOutlined,
   UnorderedListOutlined,
   TeamOutlined,
   MessageOutlined,
@@ -116,6 +117,7 @@ const Layout: React.FC = () => {
 
   const menuItems = [
     { key: '/dashboard', icon: <DashboardOutlined />, label: t('layout.dashboard') },
+    { key: '/brokers', icon: <CloudServerOutlined />, label: t('layout.brokers') },
     { key: '/topics', icon: <UnorderedListOutlined />, label: t('layout.topics') },
     { key: '/consumer-groups', icon: <TeamOutlined />, label: t('layout.consumerGroups') },
     { key: '/messages', icon: <MessageOutlined />, label: t('layout.messages') },

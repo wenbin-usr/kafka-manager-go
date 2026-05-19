@@ -27,6 +27,7 @@ func main() {
 	store := service.NewClusterStore()
 
 	clusterHandler := handler.NewClusterHandler(store)
+	brokerHandler := handler.NewBrokerHandler(store)
 	topicHandler := handler.NewTopicHandler(store)
 	consumerHandler := handler.NewConsumerHandler(store)
 	messageHandler := handler.NewMessageHandler(store)
@@ -42,10 +43,13 @@ func main() {
 		api.POST("/clusters", clusterHandler.AddCluster)
 		api.DELETE("/clusters/:id", clusterHandler.RemoveCluster)
 		api.GET("/clusters/:id/overview", clusterHandler.GetOverview)
+		api.GET("/clusters/:id/brokers", brokerHandler.ListBrokers)
 
 		// Topics
 		api.GET("/clusters/:id/topics", topicHandler.ListTopics)
 		api.GET("/clusters/:id/topics/:topic", topicHandler.GetTopicDetail)
+		api.GET("/clusters/:id/topics/:topic/configs", topicHandler.GetTopicConfigs)
+		api.PUT("/clusters/:id/topics/:topic/configs", topicHandler.UpdateTopicConfigs)
 		api.POST("/clusters/:id/topics", topicHandler.CreateTopic)
 		api.DELETE("/clusters/:id/topics/:topic", topicHandler.DeleteTopic)
 
@@ -56,6 +60,7 @@ func main() {
 
 		// Messages
 		api.GET("/clusters/:id/topics/:topic/messages", messageHandler.ReadMessages)
+		api.POST("/clusters/:id/topics/:topic/messages", messageHandler.ProduceMessage)
 	}
 
 	// Serve frontend static files

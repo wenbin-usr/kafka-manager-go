@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { Card, Col, Row, Statistic, Spin, Alert } from 'antd';
 import {
   CloudServerOutlined,
@@ -13,6 +14,7 @@ import type { Overview } from '../types';
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { selectedCluster } = useCluster();
   const [overview, setOverview] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,13 @@ const Dashboard: React.FC = () => {
   if (error) return <Alert type="error" message={t('dashboard.loadFailed')} description={error} />;
 
   const cards = [
-    { title: t('dashboard.brokers'), value: overview?.brokerCount ?? 0, icon: <CloudServerOutlined />, color: '#1677ff' },
+    {
+      title: t('dashboard.brokers'),
+      value: overview?.brokerCount ?? 0,
+      icon: <CloudServerOutlined />,
+      color: '#1677ff',
+      onClick: () => navigate('/brokers'),
+    },
     { title: t('dashboard.topics'), value: overview?.topicCount ?? 0, icon: <UnorderedListOutlined />, color: '#52c41a' },
     { title: t('dashboard.partitions'), value: overview?.partitionCount ?? 0, icon: <PartitionOutlined />, color: '#faad14' },
     { title: t('dashboard.consumerGroups'), value: overview?.consumerGroupCount ?? 0, icon: <TeamOutlined />, color: '#722ed1' },
@@ -44,7 +52,11 @@ const Dashboard: React.FC = () => {
       <Row gutter={[16, 16]}>
         {cards.map((c) => (
           <Col xs={24} sm={12} lg={6} key={c.title}>
-            <Card>
+            <Card
+              hoverable={!!c.onClick}
+              onClick={c.onClick}
+              style={c.onClick ? { cursor: 'pointer' } : undefined}
+            >
               <Statistic
                 title={c.title}
                 value={c.value}

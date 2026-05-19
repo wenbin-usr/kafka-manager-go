@@ -1,11 +1,13 @@
 package service
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"kafka-manager-go/internal/model"
 
@@ -189,8 +191,50 @@ func readPartitionMessages(brokers, topic string, partition int, startOffset int
 			Value:     value,
 			Timestamp: ts,
 			IsJSON:    isJSON,
+			Headers:   parseMessageHeaders(msg.Headers),
 		})
 	}
 
 	return messages, nil
+}
+
+func parseMessageHeaders(headers []kafka.Header) []model.MessageHeader {
+	if len(headers) == 0 {
+		return nil
+	}
+	result := make([]model.MessageHeader, 0, len(headers))
+	for _, h := range headers {
+		value, encoding := encodeHeaderValue(h.Value)
+		result = append(result, model.MessageHeader{
+			Key:      h.Key,
+			Value:    value,
+			Encoding: encoding,
+		})
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].Key == result[j].Key {
+			return result[i].Value < result[j].Value
+		}
+		return result[i].Key < result[j].Key
+	})
+	return result
+}
+
+func encodeHeaderValue(value []byte) (string, string) {
+	if len(value) == 0 {
+		return "", "utf8"
+	}
+	if utf8.Valid(value) && isPrintableBytes(value) {
+		return string(value), "utf8"
+	}
+	return base64.StdEncoding.EncodeToString(value), "base64"
+}
+
+func isPrintableBytes(b []byte) bool {
+	for _, c := range b {
+		if c < 32 && c != '\t' && c != '\n' && c != '\r' {
+			return false
+		}
+	}
+	return true
 }

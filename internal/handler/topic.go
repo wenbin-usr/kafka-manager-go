@@ -53,6 +53,45 @@ func (h *TopicHandler) GetTopicDetail(c *gin.Context) {
 	c.JSON(http.StatusOK, model.OKResponse(detail))
 }
 
+// GetTopicConfigs returns configuration entries for a topic
+func (h *TopicHandler) GetTopicConfigs(c *gin.Context) {
+	cluster, ok := h.getCluster(c)
+	if !ok {
+		return
+	}
+
+	topic := c.Param("topic")
+	configs, err := service.GetTopicConfigs(cluster.Brokers, topic)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, model.ErrorResponse(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, model.OKResponse(configs))
+}
+
+// UpdateTopicConfigs updates editable topic configuration entries
+func (h *TopicHandler) UpdateTopicConfigs(c *gin.Context) {
+	cluster, ok := h.getCluster(c)
+	if !ok {
+		return
+	}
+
+	var req model.UpdateTopicConfigsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponseMsg("invalid request body"))
+		return
+	}
+
+	topic := c.Param("topic")
+	if err := service.UpdateTopicConfigs(cluster.Brokers, topic, req.Configs); err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, model.OKResponse(nil))
+}
+
 // CreateTopic creates a new topic
 func (h *TopicHandler) CreateTopic(c *gin.Context) {
 	cluster, ok := h.getCluster(c)

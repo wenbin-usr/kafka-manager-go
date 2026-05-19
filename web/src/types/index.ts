@@ -28,6 +28,16 @@ export interface TopicDetail {
   totalMessages: number;
 }
 
+export interface TopicConfigEntry {
+  name: string;
+  value: string;
+  defaultValue?: string;
+  readOnly: boolean;
+  sensitive: boolean;
+  documentation?: string;
+  editable: boolean;
+}
+
 export interface ConsumerGroupInfo {
   groupId: string;
   state: string;
@@ -57,6 +67,29 @@ export interface ConsumerGroupDetail {
   totalLag: number;
 }
 
+export interface MessageHeader {
+  key: string;
+  value: string;
+  encoding?: 'utf8' | 'base64';
+}
+
+export interface ProduceMessageHeader {
+  key: string;
+  value: string;
+}
+
+export interface ProduceMessageRequest {
+  key?: string;
+  value: string;
+  partition?: number;
+  headers?: ProduceMessageHeader[];
+}
+
+export interface ProduceMessageResult {
+  partition: number;
+  offset: number;
+}
+
 export interface MessageRecord {
   partition: number;
   offset: number;
@@ -64,6 +97,7 @@ export interface MessageRecord {
   value: string;
   timestamp: string;
   isJson: boolean;
+  headers?: MessageHeader[];
 }
 
 export interface Overview {
@@ -71,6 +105,25 @@ export interface Overview {
   topicCount: number;
   partitionCount: number;
   consumerGroupCount: number;
+}
+
+export interface BrokerTopicAssignment {
+  topic: string;
+  partition: number;
+  role: 'leader' | 'replica' | string;
+}
+
+export interface BrokerInfo {
+  id: number;
+  host: string;
+  port: number;
+  address: string;
+  rack?: string;
+  isController: boolean;
+  clusterId?: string;
+  leaderPartitions: number;
+  replicaPartitions: number;
+  assignments: BrokerTopicAssignment[];
 }
 
 export interface ApiResponse<T> {

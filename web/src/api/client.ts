@@ -3,11 +3,15 @@ import type {
   ApiResponse,
   ClusterConfig,
   Overview,
+  BrokerInfo,
   TopicInfo,
   TopicDetail,
+  TopicConfigEntry,
   ConsumerGroupInfo,
   ConsumerGroupDetail,
   MessageRecord,
+  ProduceMessageRequest,
+  ProduceMessageResult,
 } from '../types';
 
 const api = axios.create({
@@ -40,6 +44,10 @@ export async function getClusterOverview(id: string): Promise<Overview> {
   return unwrap<Overview>(await api.get(`/clusters/${id}/overview`));
 }
 
+export async function listBrokers(clusterId: string): Promise<BrokerInfo[]> {
+  return unwrap<BrokerInfo[]>(await api.get(`/clusters/${clusterId}/brokers`));
+}
+
 // Topic APIs
 export async function listTopics(clusterId: string): Promise<TopicInfo[]> {
   return unwrap<TopicInfo[]>(await api.get(`/clusters/${clusterId}/topics`));
@@ -62,6 +70,20 @@ export async function deleteTopic(clusterId: string, topic: string): Promise<voi
   unwrap(await api.delete(`/clusters/${clusterId}/topics/${topic}`));
 }
 
+export async function getTopicConfigs(clusterId: string, topic: string): Promise<TopicConfigEntry[]> {
+  return unwrap<TopicConfigEntry[]>(
+    await api.get(`/clusters/${clusterId}/topics/${encodeURIComponent(topic)}/configs`),
+  );
+}
+
+export async function updateTopicConfigs(
+  clusterId: string,
+  topic: string,
+  configs: Record<string, string>,
+): Promise<void> {
+  unwrap(await api.put(`/clusters/${clusterId}/topics/${encodeURIComponent(topic)}/configs`, { configs }));
+}
+
 // Consumer Group APIs
 export async function listConsumerGroups(clusterId: string): Promise<ConsumerGroupInfo[]> {
   return unwrap<ConsumerGroupInfo[]>(await api.get(`/clusters/${clusterId}/consumer-groups`));
@@ -76,6 +98,16 @@ export async function deleteConsumerGroupOffsets(clusterId: string, group: strin
 }
 
 // Message APIs
+export async function produceMessage(
+  clusterId: string,
+  topic: string,
+  body: ProduceMessageRequest,
+): Promise<ProduceMessageResult> {
+  return unwrap<ProduceMessageResult>(
+    await api.post(`/clusters/${clusterId}/topics/${encodeURIComponent(topic)}/messages`, body),
+  );
+}
+
 export async function readMessages(
   clusterId: string,
   topic: string,

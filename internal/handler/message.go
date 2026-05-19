@@ -61,6 +61,29 @@ func (h *MessageHandler) ReadMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, model.OKResponse(messages))
 }
 
+// ProduceMessage sends a message to a topic
+func (h *MessageHandler) ProduceMessage(c *gin.Context) {
+	cluster, ok := h.getCluster(c)
+	if !ok {
+		return
+	}
+
+	var req model.ProduceMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponseMsg("invalid request body"))
+		return
+	}
+
+	topic := c.Param("topic")
+	result, err := service.ProduceMessage(cluster.Brokers, topic, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, model.OKResponse(result))
+}
+
 func (h *MessageHandler) getCluster(c *gin.Context) (model.ClusterConfig, bool) {
 	id := c.Param("id")
 	cluster, ok := h.store.GetCluster(id)
