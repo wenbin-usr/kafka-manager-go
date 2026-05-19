@@ -1,11 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Descriptions, Table, Spin, Alert, Button, Tag } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Descriptions, Table, Spin, Alert, Button, Tag, Space, Typography } from 'antd';
+import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useCluster } from '../components/Layout';
 import { getConsumerGroupDetail } from '../api/client';
 import type { ConsumerGroupDetail as ConsumerGroupDetailType } from '../types';
+
+const { Text } = Typography;
+
+const REFRESH_INTERVAL_MS = 30000;
 
 const stateColors: Record<string, string> = {
   Stable: 'green',
@@ -28,20 +32,48 @@ const ConsumerGroupDetail: React.FC = () => {
   const navigate = useNavigate();
   const [detail, setDetail] = useState<ConsumerGroupDetailType | null>(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (!selectedCluster || !groupId) return;
-    setLoading(true);
-    setError('');
-    getConsumerGroupDetail(selectedCluster.id, decodeURIComponent(groupId))
-      .then(setDetail)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [selectedCluster, groupId]);
+  const decodedGroupId = groupId ? decodeURIComponent(groupId) : '';
 
-  if (loading) return <Spin size="large" style={{ display: 'block', margin: '60px auto' }} />;
-  if (error) return <Alert type="error" message={t('consumerGroupDetail.loadFailed')} description={error} />;
+  const loadDetail = useCallback(
+    async (silent = false) => {
+      if (!selectedCluster || !decodedGroupId) return;
+      if (silent) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError('');
+      try {
+        const data = await getConsumerGroupDetail(selectedCluster.id, decodedGroupId);
+        setDetail(data);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : String(err));
+        if (!silent) {
+          setDetail(null);
+        }
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [selectedCluster, decodedGroupId],
+  );
+
+  useEffect(() => {
+    loadDetail();
+  }, [loadDetail]);
+
+  useEffect(() => {
+    if (!selectedCluster || !decodedGroupId) return;
+    const timer = window.setInterval(() => loadDetail(true), REFRESH_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [selectedCluster, decodedGroupId, loadDetail]);
+
+  if (loading && !detail) return <Spin size="large" style={{ display: 'block', margin: '60px auto' }} />;
+  if (error && !detail) return <Alert type="error" message={t('consumerGroupDetail.loadFailed')} description={error} />;
   if (!detail) return null;
 
   const memberColumns = [
@@ -96,11 +128,21 @@ const ConsumerGroupDetail: React.FC = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/consumer-groups')}>
           {t('consumerGroupDetail.back')}
         </Button>
+        <Space>
+          <Text type="secondary">{t('consumerGroupDetail.autoRefreshHint')}</Text>
+          <Button icon={<ReloadOutlined />} loading={refreshing} onClick={() => loadDetail(true)}>
+            {t('consumerGroupDetail.refresh')}
+          </Button>
+        </Space>
       </div>
+
+      {error && (
+        <Alert type="warning" message={error} style={{ marginBottom: 16 }} showIcon closable onClose={() => setError('')} />
+      )}
 
       <Descriptions title={t('consumerGroupDetail.title', { groupId: detail.groupId })} bordered column={3} style={{ marginBottom: 24 }}>
         <Descriptions.Item label={t('consumerGroups.state')}>
@@ -137,6 +179,7 @@ const ConsumerGroupDetail: React.FC = () => {
         rowKey={(r) => `${r.topic}-${r.partition}`}
         pagination={{ pageSize: 20, showSizeChanger: true }}
         size="small"
+        loading={refreshing}
       />
     </div>
   );

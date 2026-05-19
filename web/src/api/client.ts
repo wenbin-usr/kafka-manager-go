@@ -88,6 +88,18 @@ export async function updateTopicConfigs(
   unwrap(await api.put(`/clusters/${clusterId}/topics/${encodeURIComponent(topic)}/configs`, { configs }));
 }
 
+export async function increaseTopicPartitions(
+  clusterId: string,
+  topic: string,
+  totalPartitions: number,
+): Promise<void> {
+  unwrap(
+    await api.post(`/clusters/${clusterId}/topics/${encodeURIComponent(topic)}/partitions`, {
+      totalPartitions,
+    }),
+  );
+}
+
 // Consumer Group APIs
 export async function listConsumerGroups(clusterId: string): Promise<ConsumerGroupInfo[]> {
   return unwrap<ConsumerGroupInfo[]>(await api.get(`/clusters/${clusterId}/consumer-groups`));

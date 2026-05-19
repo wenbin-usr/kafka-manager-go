@@ -11,14 +11,15 @@ import {
   Modal,
   Form,
   Input,
+  InputNumber,
   Select,
   Space,
   message,
   Tooltip,
 } from 'antd';
-import { ArrowLeftOutlined, EditOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { useCluster } from '../components/Layout';
-import { getTopicDetail, getTopicConfigs, updateTopicConfigs } from '../api/client';
+import { getTopicDetail, getTopicConfigs, updateTopicConfigs, increaseTopicPartitions } from '../api/client';
 import type { TopicDetail as TopicDetailType, TopicConfigEntry } from '../types';
 
 const SELECT_OPTIONS: Record<string, string[]> = {
@@ -38,8 +39,11 @@ const TopicDetail: React.FC = () => {
   const [error, setError] = useState('');
   const [configsError, setConfigsError] = useState('');
   const [editOpen, setEditOpen] = useState(false);
+  const [partitionsOpen, setPartitionsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [increasing, setIncreasing] = useState(false);
   const [form] = Form.useForm<Record<string, string>>();
+  const [partitionsForm] = Form.useForm<{ totalPartitions: number }>();
 
   const decodedTopic = topicName ? decodeURIComponent(topicName) : '';
 
@@ -84,6 +88,27 @@ const TopicDetail: React.FC = () => {
     });
     form.setFieldsValue(initial);
     setEditOpen(true);
+  };
+
+  const openIncreasePartitions = () => {
+    partitionsForm.setFieldsValue({ totalPartitions: (detail?.partitionCount ?? 0) + 1 });
+    setPartitionsOpen(true);
+  };
+
+  const handleIncreasePartitions = async () => {
+    if (!selectedCluster || !decodedTopic || !detail) return;
+    const values = await partitionsForm.validateFields();
+    setIncreasing(true);
+    try {
+      await increaseTopicPartitions(selectedCluster.id, decodedTopic, values.totalPartitions);
+      message.success(t('topicDetail.partitionsIncreased', { count: values.totalPartitions }));
+      setPartitionsOpen(false);
+      loadDetail();
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : t('topicDetail.increasePartitionsFailed'));
+    } finally {
+      setIncreasing(false);
+    }
   };
 
   const handleSaveConfigs = async () => {
@@ -222,6 +247,12 @@ const TopicDetail: React.FC = () => {
         <Descriptions.Item label={t('topicDetail.totalMessages')}>{detail.totalMessages.toLocaleString()}</Descriptions.Item>
       </Descriptions>
 
+      <div style={{ marginBottom: 24 }}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openIncreasePartitions}>
+          {t('topicDetail.increasePartitions')}
+        </Button>
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h3 style={{ margin: 0 }}>{t('topicDetail.configsTitle')}</h3>
         <Button
@@ -286,6 +317,36 @@ const TopicDetail: React.FC = () => {
               </Form.Item>
             );
           })}
+        </Form>
+      </Modal>
+
+      <Modal
+        title={t('topicDetail.increasePartitionsTitle')}
+        open={partitionsOpen}
+        onCancel={() => setPartitionsOpen(false)}
+        onOk={handleIncreasePartitions}
+        confirmLoading={increasing}
+        destroyOnClose
+      >
+        <p style={{ marginBottom: 16, color: 'rgba(0,0,0,0.45)' }}>
+          {t('topicDetail.currentPartitions', { count: detail.partitionCount })}
+        </p>
+        <p style={{ marginBottom: 16 }}>{t('topicDetail.increasePartitionsHint')}</p>
+        <Form form={partitionsForm} layout="vertical">
+          <Form.Item
+            name="totalPartitions"
+            label={t('topicDetail.newTotalPartitions')}
+            rules={[
+              { required: true, message: t('topicDetail.totalPartitionsRequired') },
+              {
+                type: 'number',
+                min: detail.partitionCount + 1,
+                message: t('topicDetail.totalPartitionsMin', { min: detail.partitionCount }),
+              },
+            ]}
+          >
+            <InputNumber min={detail.partitionCount + 1} style={{ width: '100%' }} />
+          </Form.Item>
         </Form>
       </Modal>
     </div>

@@ -120,6 +120,28 @@ func (h *TopicHandler) CreateTopic(c *gin.Context) {
 	c.JSON(http.StatusCreated, model.OKResponse(nil))
 }
 
+// IncreasePartitions increases a topic's partition count
+func (h *TopicHandler) IncreasePartitions(c *gin.Context) {
+	cluster, ok := h.getCluster(c)
+	if !ok {
+		return
+	}
+
+	var req model.IncreasePartitionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponseMsg("totalPartitions is required"))
+		return
+	}
+
+	topic := c.Param("topic")
+	if err := service.IncreaseTopicPartitions(cluster.Brokers, topic, req.TotalPartitions); err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse(err))
+		return
+	}
+
+	c.JSON(http.StatusOK, model.OKResponse(nil))
+}
+
 // DeleteTopic deletes a topic
 func (h *TopicHandler) DeleteTopic(c *gin.Context) {
 	cluster, ok := h.getCluster(c)

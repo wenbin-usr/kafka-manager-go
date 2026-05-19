@@ -65,6 +65,11 @@ type CreateTopicRequest struct {
 	ReplicationFactor int    `json:"replicationFactor"`
 }
 
+// IncreasePartitionsRequest sets the new total partition count for a topic
+type IncreasePartitionsRequest struct {
+	TotalPartitions int `json:"totalPartitions"`
+}
+
 // ConsumerGroupInfo represents basic consumer group information
 type ConsumerGroupInfo struct {
 	GroupID              string `json:"groupId"`

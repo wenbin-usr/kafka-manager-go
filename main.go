@@ -52,6 +52,7 @@ func main() {
 		api.GET("/clusters/:id/topics/:topic/configs", topicHandler.GetTopicConfigs)
 		api.PUT("/clusters/:id/topics/:topic/configs", topicHandler.UpdateTopicConfigs)
 		api.POST("/clusters/:id/topics", topicHandler.CreateTopic)
+		api.POST("/clusters/:id/topics/:topic/partitions", topicHandler.IncreasePartitions)
 		api.DELETE("/clusters/:id/topics/:topic", topicHandler.DeleteTopic)
 
 		// Consumer Groups

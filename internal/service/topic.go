@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
 
 	"kafka-manager-go/internal/model"
 
@@ -162,6 +163,47 @@ func CreateTopic(brokers string, req model.CreateTopicRequest) error {
 	err = conn.CreateTopics(topicConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create topic: %w", err)
+	}
+
+	return nil
+}
+
+// IncreaseTopicPartitions increases a topic to the given total partition count.
+func IncreaseTopicPartitions(brokers, topic string, totalPartitions int) error {
+	if totalPartitions <= 0 {
+		return fmt.Errorf("total partitions must be positive")
+	}
+
+	detail, err := GetTopicDetail(brokers, topic)
+	if err != nil {
+		return err
+	}
+	current := detail.PartitionCount
+	if totalPartitions <= current {
+		return fmt.Errorf("new partition count %d must be greater than current %d", totalPartitions, current)
+	}
+
+	brokerList := splitBrokers(brokers)
+	if len(brokerList) == 0 {
+		return fmt.Errorf("no broker addresses configured")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	client := &kafka.Client{Addr: kafka.TCP(brokerList...)}
+	resp, err := client.CreatePartitions(ctx, &kafka.CreatePartitionsRequest{
+		Topics: []kafka.TopicPartitionsConfig{{
+			Name:  topic,
+			Count: int32(totalPartitions),
+		}},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to increase partitions: %w", err)
+	}
+
+	if topicErr, ok := resp.Errors[topic]; ok && topicErr != nil {
+		return fmt.Errorf("failed to increase partitions for topic %s: %w", topic, topicErr)
 	}
 
 	return nil
