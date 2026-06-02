@@ -94,6 +94,10 @@ func ReadMessages(brokers, topic string, query model.MessageQuery) ([]model.Mess
 		messages = messages[:query.Limit]
 	}
 
+	if messages == nil {
+		messages = []model.MessageRecord{}
+	}
+
 	return messages, nil
 }
 

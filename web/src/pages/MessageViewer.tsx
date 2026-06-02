@@ -95,13 +95,15 @@ const MessageViewer: React.FC = () => {
     }
   };
 
+  const messageList = Array.isArray(messages) ? messages : [];
+
   const sortedMessages = useMemo(() => {
-    if (!timestampSort) return messages;
-    return [...messages].sort((a, b) => {
+    if (!timestampSort) return messageList;
+    return [...messageList].sort((a, b) => {
       const diff = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
       return timestampSort === 'asc' ? diff : -diff;
     });
-  }, [messages, timestampSort]);
+  }, [messageList, timestampSort]);
 
   const copyToClipboard = useCallback(
     async (text: string) => {
@@ -229,28 +231,31 @@ const MessageViewer: React.FC = () => {
       key: 'value',
       width: 360,
       ellipsis: true,
-      render: (value: string, record: MessageRecord) => (
-        <Space
-          size={4}
-          align="start"
-          style={{ cursor: 'pointer', width: '100%' }}
-          title={t('messageViewer.clickValueHint')}
-          onClick={() => setDetailMessage(record)}
-        >
-          {record.isJson && <Tag color="blue">JSON</Tag>}
-          {!!record.headers?.length && (
-            <Tag color="purple">
-              {record.headers.length} {t('messageViewer.headers')}
-            </Tag>
-          )}
-          <Text
-            ellipsis={{ tooltip: value }}
-            style={{ flex: 1, minWidth: 0, color: token.colorPrimary }}
+      render: (value: string | undefined, record: MessageRecord) => {
+        const text = value ?? '';
+        return (
+          <Space
+            size={4}
+            align="start"
+            style={{ cursor: 'pointer', width: '100%' }}
+            title={t('messageViewer.clickValueHint')}
+            onClick={() => setDetailMessage(record)}
           >
-            {value.length > 200 ? value.substring(0, 200) + '...' : value}
-          </Text>
-        </Space>
-      ),
+            {record.isJson && <Tag color="blue">JSON</Tag>}
+            {!!record.headers?.length && (
+              <Tag color="purple">
+                {record.headers.length} {t('messageViewer.headers')}
+              </Tag>
+            )}
+            <Text
+              ellipsis={{ tooltip: text }}
+              style={{ flex: 1, minWidth: 0, color: token.colorPrimary }}
+            >
+              {text.length > 200 ? text.substring(0, 200) + '...' : text || '-'}
+            </Text>
+          </Space>
+        );
+      },
     },
     {
       title: (
@@ -365,7 +370,7 @@ const MessageViewer: React.FC = () => {
 
       {loading && <Spin size="large" style={{ display: 'block', margin: '40px auto' }} />}
       {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} />}
-      {!loading && searched && !error && messages.length === 0 && (
+      {!loading && searched && !error && messageList.length === 0 && (
         <Alert
           type="info"
           message={t('messageViewer.noMessages')}
@@ -374,7 +379,7 @@ const MessageViewer: React.FC = () => {
         />
       )}
 
-      {!loading && (
+      {!loading && sortedMessages.length > 0 && (
         <ResizableTable
           columns={columns}
           dataSource={sortedMessages}

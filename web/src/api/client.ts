@@ -134,7 +134,8 @@ export async function readMessages(
     valueFilter?: string;
   },
 ): Promise<MessageRecord[]> {
-  return unwrap<MessageRecord[]>(
+  const data = unwrap<MessageRecord[] | null>(
     await api.get(`/clusters/${clusterId}/topics/${encodeURIComponent(topic)}/messages`, { params }),
   );
+  return Array.isArray(data) ? data : [];
 }

@@ -130,7 +130,7 @@ export function ResizableTable<T extends object>({
       className={['km-resizable-table', className].filter(Boolean).join(' ')}
       columns={columns}
       tableLayout="fixed"
-      scroll={{ ...scroll, x: scroll?.x ?? scrollX }}
+      scroll={{ ...scroll, x: scroll?.x ?? Math.max(scrollX, 1) }}
       components={{
         header: {
           cell: ResizableHeaderCell,
